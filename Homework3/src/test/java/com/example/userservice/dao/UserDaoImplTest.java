@@ -24,9 +24,13 @@ class UserDaoImplTest {
 
     @BeforeAll
     static void setUp() {
-        sessionFactory = new Configuration()
-                .configure("hibernate-test.cfg.xml")
-                .buildSessionFactory();
+        Configuration configuration = new Configuration().configure("hibernate-test.cfg.xml");
+        String dbPassword = System.getenv("DB_PASSWORD");
+        if (dbPassword == null || dbPassword.isBlank()) {
+            throw new IllegalStateException("DB_PASSWORD environment variable must be set");
+        }
+        configuration.setProperty("hibernate.connection.password", dbPassword);
+        sessionFactory = configuration.buildSessionFactory();
         createSchema();
         userDao = new UserDaoImpl(sessionFactory);
     }
