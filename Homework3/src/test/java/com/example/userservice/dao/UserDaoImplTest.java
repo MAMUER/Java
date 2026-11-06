@@ -27,7 +27,7 @@ class UserDaoImplTest {
         Configuration configuration = new Configuration().configure("hibernate-test.cfg.xml");
         String dbPassword = System.getenv("DB_PASSWORD");
         if (dbPassword == null || dbPassword.isBlank()) {
-            throw new IllegalStateException("DB_PASSWORD environment variable must be set");
+            dbPassword = "postgres";
         }
         configuration.setProperty("hibernate.connection.password", dbPassword);
         sessionFactory = configuration.buildSessionFactory();
