@@ -20,9 +20,26 @@
         <slf4j.version>2.0.18</slf4j.version>
         <logback.version>1.6.3</logback.version>
         <junit.version>5.10.2</junit.version>
-        <mockito.version>5.14.2</mockito.version>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <mockito.version>5.24.0</mockito.version>
+        <bytebuddy.version>1.18.17</bytebuddy.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Hibernate 6.4.4 brings byte-buddy 1.14.x, which cannot parse Java 25 class files -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Hibernate ORM -->
