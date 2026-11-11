@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserDaoImplIntegrationTest {
 
     @Container
+    @SuppressWarnings("resource")
     private static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
                     .withDatabaseName("user_service_test")
@@ -159,15 +160,16 @@ class UserDaoImplIntegrationTest {
     @Test
     void duplicateEmailViolatesUniqueConstraint() {
         userDao.create(new UserDto(null, " Heidi ", "heidi@example.com", 31, null));
+        UserDto duplicate = new UserDto(null, "Heidi Two", "heidi@example.com", 35, null);
 
-        assertThrows(DaoException.class, () ->
-                userDao.create(new UserDto(null, "Heidi Two", "heidi@example.com", 35, null)));
+        assertThrows(DaoException.class, () -> userDao.create(duplicate));
     }
 
     @Test
     void createRejectsInvalidDto() {
-        assertThrows(ValidationException.class, () ->
-                userDao.create(new UserDto(null, " ", "ivan@example.com", 30, null)));
+        UserDto invalid = new UserDto(null, " ", "ivan@example.com", 30, null);
+
+        assertThrows(ValidationException.class, () -> userDao.create(invalid));
     }
 
     @Test

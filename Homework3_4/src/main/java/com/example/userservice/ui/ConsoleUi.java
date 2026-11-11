@@ -15,6 +15,7 @@ public class ConsoleUi {
     private final Scanner scanner;
     private final PrintStream out;
 
+    @SuppressWarnings("java:S106")
     public ConsoleUi(Scanner scanner) {
         this(scanner, System.out);
     }

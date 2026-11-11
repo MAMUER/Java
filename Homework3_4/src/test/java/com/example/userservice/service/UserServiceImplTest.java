@@ -73,19 +73,20 @@ class UserServiceImplTest {
 
     @Test
     void createRejectsInvalidDto() {
-        assertThrows(ValidationException.class, () ->
-                userService.create(new UserDto(null, " ", "ivan@example.com", 30, null)));
+        UserDto invalid = new UserDto(null, " ", "ivan@example.com", 30, null);
+
+        assertThrows(ValidationException.class, () -> userService.create(invalid));
 
         verifyNoInteractions(userDao);
     }
 
     @Test
     void createRejectsDuplicateEmail() {
+        UserDto duplicate = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
         when(userDao.findByEmail("ivan@example.com"))
                 .thenReturn(Optional.of(new UserDto(7L, "Ivan", "ivan@example.com", 30, CREATED_AT)));
 
-        assertThrows(ValidationException.class, () ->
-                userService.create(new UserDto(null, "Ivan", "ivan@example.com", 30, null)));
+        assertThrows(ValidationException.class, () -> userService.create(duplicate));
 
         verify(userDao, never()).create(any(UserDto.class));
     }
@@ -168,8 +169,9 @@ class UserServiceImplTest {
         when(userDao.findById(3L)).thenReturn(Optional.of(existing));
         when(userDao.findByEmail("anna@example.com")).thenReturn(Optional.of(other));
 
-        assertThrows(ValidationException.class, () ->
-                userService.update(3L, new UserDto(null, "Ivan", "anna@example.com", 30, null)));
+        UserDto rename = new UserDto(null, "Ivan", "anna@example.com", 30, null);
+
+        assertThrows(ValidationException.class, () -> userService.update(3L, rename));
 
         verify(userDao, never()).update(anyLong(), any(UserDto.class));
     }
@@ -189,8 +191,9 @@ class UserServiceImplTest {
 
     @Test
     void updateRejectsNullArguments() {
-        assertThrows(IllegalArgumentException.class, () -> userService.update(null,
-                new UserDto(null, "Ivan", "ivan@example.com", 30, null)));
+        UserDto rename = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
+
+        assertThrows(IllegalArgumentException.class, () -> userService.update(null, rename));
         assertThrows(IllegalArgumentException.class, () -> userService.update(1L, null));
 
         verifyNoInteractions(userDao);
@@ -218,7 +221,8 @@ class UserServiceImplTest {
         when(userDao.create(any(UserDto.class)))
                 .thenThrow(new DaoException("Failed to create user", new RuntimeException()));
 
-        assertThrows(DaoException.class, () ->
-                userService.create(new UserDto(null, "Ivan", "ivan@example.com", 30, null)));
+        UserDto create = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
+
+        assertThrows(DaoException.class, () -> userService.create(create));
     }
 }
