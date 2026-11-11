@@ -32,17 +32,17 @@ public final class HibernateUtil {
                 }
                 if (dbPassword == null || dbPassword.isBlank()) {
                     dbPassword = "postgres"; // NOSONAR
-                    LOGGER.warn("DB_PASSWORD is not set, using default value");
+                    LOGGER.warn("DB_PASSWORD не задан, используется значение по умолчанию");
                 }
                 configuration.setProperty("hibernate.connection.password", dbPassword);
 
                 ensureSchema(configuration);
 
                 SessionFactory factory = configuration.buildSessionFactory();
-                LOGGER.info("Hibernate SessionFactory created successfully");
+                LOGGER.info("SessionFactory Hibernate создан");
                 return factory;
             } catch (Exception e) {
-                LOGGER.error("Failed to create SessionFactory", e);
+                LOGGER.error("Не удалось создать SessionFactory", e);
                 throw new ExceptionInInitializerError(e);
             }
         }
@@ -67,9 +67,9 @@ public final class HibernateUtil {
             try (Connection connection = DriverManager.getConnection(url, user, password);
                  Statement statement = connection.createStatement()) {
                 statement.execute(createTableSql);
-                LOGGER.info("Database schema ensured");
+                LOGGER.info("Схема базы данных подготовлена");
             } catch (Exception e) {
-                LOGGER.error("Failed to ensure database schema", e);
+                LOGGER.error("Не удалось подготовить схему базы данных", e);
                 throw new ExceptionInInitializerError(e);
             }
         }
@@ -85,7 +85,7 @@ public final class HibernateUtil {
     public static void shutdown() {
         if (Holder.INSTANCE != null && !Holder.INSTANCE.isClosed()) {
             Holder.INSTANCE.close();
-            LOGGER.info("Hibernate SessionFactory closed");
+            LOGGER.info("SessionFactory Hibernate закрыт");
         }
     }
 }

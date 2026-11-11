@@ -34,7 +34,7 @@ public final class UserMapper {
 
     public static UserDto toDto(User entity) {
         if (entity == null) {
-            throw new IllegalArgumentException("entity must not be null");
+            throw new IllegalArgumentException("entity не должен быть null");
         }
         return new UserDto(
                 entity.getId(),
@@ -87,7 +87,7 @@ public final class UserMapper {
 
     public static void validate(UserDto dto) {
         if (dto == null) {
-            throw new IllegalArgumentException("dto must not be null");
+            throw new IllegalArgumentException("dto не должен быть null");
         }
         List<String> violations = new ArrayList<>();
         violations.addAll(validateName(dto.name()));

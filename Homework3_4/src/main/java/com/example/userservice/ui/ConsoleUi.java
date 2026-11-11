@@ -26,7 +26,7 @@ public class ConsoleUi {
     }
 
     public void printMenu() {
-        out.println("=== User Service ===");
+        out.println("=== Служба пользователей ===");
         out.println("1. Создать пользователя");
         out.println("2. Найти по ID");
         out.println("3. Показать всех");
@@ -104,7 +104,7 @@ public class ConsoleUi {
         String createdAt = dto.createdAt() == null
                 ? "-"
                 : dto.createdAt().format(DATE_TIME_FORMATTER);
-        out.printf("id=%d, name=%s, email=%s, age=%d, createdAt=%s%n",
+        out.printf("id=%d, имя=%s, email=%s, возраст=%d, создан=%s%n",
                 dto.id(), dto.name(), dto.email(), dto.age(), createdAt);
     }
 

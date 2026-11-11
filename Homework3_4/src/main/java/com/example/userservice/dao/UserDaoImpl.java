@@ -33,7 +33,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public UserDto create(UserDto dto) {
         if (dto == null) {
-            throw new IllegalArgumentException("dto must not be null");
+            throw new IllegalArgumentException("dto не должен быть null");
         }
         UserMapper.validate(dto);
         try (Session session = sessionFactory.openSession()) {
@@ -42,11 +42,11 @@ public class UserDaoImpl implements UserDao {
                 User entity = UserMapper.toEntity(dto);
                 session.persist(entity);
                 tx.commit();
-                LOGGER.info("Created user with id {}", entity.getId());
+                LOGGER.info("Создан пользователь с id {}", entity.getId());
                 return UserMapper.toDto(entity);
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to create user", e);
+                throw new DaoException("Не удалось создать пользователя", e);
             }
         }
     }
@@ -54,7 +54,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public Optional<UserDto> findById(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
@@ -64,7 +64,7 @@ public class UserDaoImpl implements UserDao {
                 return Optional.ofNullable(entity).map(UserMapper::toDto);
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to find user by id " + id, e);
+                throw new DaoException("Не удалось найти пользователя по id " + id, e);
             }
         }
     }
@@ -72,7 +72,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public Optional<UserDto> findByEmail(String email) {
         if (email == null) {
-            throw new IllegalArgumentException("email must not be null");
+            throw new IllegalArgumentException("email не должен быть null");
         }
         String normalized = email.trim().toLowerCase(Locale.ROOT);
         try (Session session = sessionFactory.openSession()) {
@@ -86,7 +86,7 @@ public class UserDaoImpl implements UserDao {
                 return Optional.ofNullable(entity).map(UserMapper::toDto);
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to find user by email " + normalized, e);
+                throw new DaoException("Не удалось найти пользователя по email " + normalized, e);
             }
         }
     }
@@ -102,7 +102,7 @@ public class UserDaoImpl implements UserDao {
                 return entities.stream().map(UserMapper::toDto).toList();
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to find all users", e);
+                throw new DaoException("Не удалось получить список пользователей", e);
             }
         }
     }
@@ -110,10 +110,10 @@ public class UserDaoImpl implements UserDao {
     @Override
     public Optional<UserDto> update(Long id, UserDto dto) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         if (dto == null) {
-            throw new IllegalArgumentException("dto must not be null");
+            throw new IllegalArgumentException("dto не должен быть null");
         }
         UserMapper.validate(dto);
         try (Session session = sessionFactory.openSession()) {
@@ -122,7 +122,7 @@ public class UserDaoImpl implements UserDao {
                 User entity = session.get(User.class, id);
                 if (entity == null) {
                     tx.commit();
-                    LOGGER.warn("User not found for update, id {}", id);
+                    LOGGER.warn("Пользователь не найден для обновления, id {}", id);
                     return Optional.empty();
                 }
                 entity.setName(dto.name().trim());
@@ -130,11 +130,11 @@ public class UserDaoImpl implements UserDao {
                 entity.setAge(dto.age());
                 session.merge(entity);
                 tx.commit();
-                LOGGER.info("Updated user with id {}", id);
+                LOGGER.info("Обновлён пользователь с id {}", id);
                 return Optional.of(UserMapper.toDto(entity));
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to update user with id " + id, e);
+                throw new DaoException("Не удалось обновить пользователя с id " + id, e);
             }
         }
     }
@@ -142,7 +142,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public boolean delete(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
@@ -150,16 +150,16 @@ public class UserDaoImpl implements UserDao {
                 User entity = session.get(User.class, id);
                 if (entity == null) {
                     tx.commit();
-                    LOGGER.warn("User not found for delete, id {}", id);
+                    LOGGER.warn("Пользователь не найден для удаления, id {}", id);
                     return false;
                 }
                 session.remove(entity);
                 tx.commit();
-                LOGGER.info("Deleted user with id {}", id);
+                LOGGER.info("Удалён пользователь с id {}", id);
                 return true;
             } catch (Exception e) {
                 rollbackQuietly(tx);
-                throw new DaoException("Failed to delete user with id " + id, e);
+                throw new DaoException("Не удалось удалить пользователя с id " + id, e);
             }
         }
     }
@@ -170,7 +170,7 @@ public class UserDaoImpl implements UserDao {
                 tx.rollback();
             }
         } catch (Exception rollbackEx) {
-            LOGGER.error("Rollback failed", rollbackEx);
+            LOGGER.error("Не удалось откатить транзакцию", rollbackEx);
         }
     }
 }

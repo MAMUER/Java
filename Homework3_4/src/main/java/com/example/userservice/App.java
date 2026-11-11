@@ -27,7 +27,7 @@ public class App {
             printExample();
             return;
         }
-        LOGGER.info("Application started");
+        LOGGER.info("Приложение запущено");
         Scanner scanner = new Scanner(System.in);
 
         ConsoleUi ui = null;
@@ -36,7 +36,7 @@ public class App {
             UserService userService = new UserServiceImpl(new UserDaoImpl());
             runLoop(ui, userService);
         } catch (Exception e) {
-            LOGGER.error("Unexpected error", e);
+            LOGGER.error("Непредвиденная ошибка", e);
             if (ui != null) {
                 ui.printError("Непредвиденная ошибка: " + e.getMessage());
             } else {
@@ -44,7 +44,7 @@ public class App {
             }
         } finally {
             HibernateUtil.shutdown();
-            LOGGER.info("Application stopped");
+            LOGGER.info("Приложение остановлено");
         }
     }
 
@@ -262,10 +262,10 @@ public class App {
         LOGGER.info("Email: ivan@example.com");
         LOGGER.info("Возраст: 30");
         LOGGER.info("Пользователь создан:");
-        LOGGER.info("id=1, name=Иван, email=ivan@example.com, age=30, createdAt=2026-01-01 12:00:00");
+        LOGGER.info("id=1, имя=Иван, email=ivan@example.com, возраст=30, создан=2026-01-01 12:00:00");
         LOGGER.info("Выберите действие: 2");
         LOGGER.info("ID: 1");
-        LOGGER.info("id=1, name=Иван, email=ivan@example.com, age=30, createdAt=2026-01-01 12:00:00");
+        LOGGER.info("id=1, имя=Иван, email=ivan@example.com, возраст=30, создан=2026-01-01 12:00:00");
         LOGGER.info("Выберите действие: 0");
     }
 }

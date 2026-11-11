@@ -141,6 +141,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
+                    <!-- Mockito's inline mock maker needs an agent at JVM start; -Xshare:off avoids the CDS warning caused by the agent -->
                     <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
                 </configuration>
             </plugin>

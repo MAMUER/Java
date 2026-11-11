@@ -219,10 +219,10 @@ class UserServiceImplTest {
     void daoFailuresArePropagated() {
         when(userDao.findByEmail("ivan@example.com")).thenReturn(Optional.empty());
         when(userDao.create(any(UserDto.class)))
-                .thenThrow(new DaoException("Failed to create user", new RuntimeException()));
+                .thenThrow(new DaoException("Не удалось создать пользователя", new RuntimeException()));
 
-        UserDto create = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
+        UserDto dto = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
 
-        assertThrows(DaoException.class, () -> userService.create(create));
+        assertThrows(DaoException.class, () -> userService.create(dto));
     }
 }

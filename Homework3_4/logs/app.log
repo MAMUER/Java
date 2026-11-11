@@ -1,0 +1,17 @@
+2026-11-11 19:52:06 [main] INFO  com.example.userservice.App - Application started
+2026-11-11 19:52:07 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-11-11 19:52:07 [main] WARN  c.e.userservice.config.HibernateUtil - DB_PASSWORD is not set, using default value
+2026-11-11 19:52:08 [main] INFO  c.e.userservice.config.HibernateUtil - Database schema ensured
+2026-11-11 19:52:08 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-11-11 19:52:08 [main] WARN  o.hibernate.orm.connections.pooling - HHH10001002: Using built-in connection pool (not intended for production use)
+2026-11-11 19:52:08 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Loaded JDBC driver class: org.postgresql.Driver
+2026-11-11 19:52:08 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001012: Connecting with JDBC URL [jdbc:postgresql://localhost:5432/postgres]
+2026-11-11 19:52:08 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001001: Connection properties: {user=postgres, password=****}
+2026-11-11 19:52:08 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001003: Autocommit mode: false
+2026-11-11 19:52:08 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001115: Connection pool size: 20 (min=1)
+2026-11-11 19:52:09 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-11-11 19:52:11 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-11 19:52:11 [main] INFO  c.e.userservice.config.HibernateUtil - Hibernate SessionFactory created successfully
+2026-11-11 19:52:30 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001008: Cleaning up connection pool [jdbc:postgresql://localhost:5432/postgres]
+2026-11-11 19:52:30 [main] INFO  c.e.userservice.config.HibernateUtil - Hibernate SessionFactory closed
+2026-11-11 19:52:30 [main] INFO  com.example.userservice.App - Application stopped

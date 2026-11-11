@@ -19,7 +19,7 @@ public class UserServiceImpl implements UserService {
 
     public UserServiceImpl(UserDao userDao) {
         if (userDao == null) {
-            throw new IllegalArgumentException("userDao must not be null");
+            throw new IllegalArgumentException("userDao не должен быть null");
         }
         this.userDao = userDao;
     }
@@ -27,21 +27,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto create(UserDto dto) {
         if (dto == null) {
-            throw new IllegalArgumentException("dto must not be null");
+            throw new IllegalArgumentException("dto не должен быть null");
         }
         UserMapper.validate(dto);
         String name = dto.name().trim();
         String email = normalizeEmail(dto.email());
         ensureEmailIsFree(email, null);
         UserDto created = userDao.create(new UserDto(null, name, email, dto.age(), null));
-        LOGGER.info("User created with id {}", created.id());
+        LOGGER.info("Создан пользователь с id {}", created.id());
         return created;
     }
 
     @Override
     public Optional<UserDto> findById(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         return userDao.findById(id);
     }
@@ -54,15 +54,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<UserDto> update(Long id, UserDto dto) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         if (dto == null) {
-            throw new IllegalArgumentException("dto must not be null");
+            throw new IllegalArgumentException("dto не должен быть null");
         }
         UserMapper.validate(dto);
         Optional<UserDto> existing = userDao.findById(id);
         if (existing.isEmpty()) {
-            LOGGER.warn("User not found for update, id {}", id);
+            LOGGER.warn("Пользователь не найден для обновления, id {}", id);
             return Optional.empty();
         }
         String name = dto.name().trim();
@@ -70,20 +70,20 @@ public class UserServiceImpl implements UserService {
         ensureEmailIsFree(email, id);
         Optional<UserDto> updated = userDao.update(id,
                 new UserDto(id, name, email, dto.age(), existing.get().createdAt()));
-        LOGGER.info("User updated with id {}", id);
+        LOGGER.info("Обновлён пользователь с id {}", id);
         return updated;
     }
 
     @Override
     public boolean delete(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+            throw new IllegalArgumentException("id не должен быть null");
         }
         boolean deleted = userDao.delete(id);
         if (deleted) {
-            LOGGER.info("User deleted with id {}", id);
+            LOGGER.info("Удалён пользователь с id {}", id);
         } else {
-            LOGGER.warn("User not found for delete, id {}", id);
+            LOGGER.warn("Пользователь не найден для удаления, id {}", id);
         }
         return deleted;
     }
