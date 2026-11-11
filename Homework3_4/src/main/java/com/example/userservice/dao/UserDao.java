@@ -11,6 +11,8 @@ public interface UserDao {
 
     Optional<UserDto> findById(Long id);
 
+    Optional<UserDto> findByEmail(String email);
+
     List<UserDto> findAll();
 
     Optional<UserDto> update(Long id, UserDto dto);

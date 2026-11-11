@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.hibernate.SessionFactory;
@@ -64,6 +65,28 @@ public class UserDaoImpl implements UserDao {
             } catch (Exception e) {
                 rollbackQuietly(tx);
                 throw new DaoException("Failed to find user by id " + id, e);
+            }
+        }
+    }
+
+    @Override
+    public Optional<UserDto> findByEmail(String email) {
+        if (email == null) {
+            throw new IllegalArgumentException("email must not be null");
+        }
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                User entity = session.createQuery(
+                                "from User u where lower(u.email) = :email", User.class)
+                        .setParameter("email", normalized)
+                        .uniqueResult();
+                tx.commit();
+                return Optional.ofNullable(entity).map(UserMapper::toDto);
+            } catch (Exception e) {
+                rollbackQuietly(tx);
+                throw new DaoException("Failed to find user by email " + normalized, e);
             }
         }
     }

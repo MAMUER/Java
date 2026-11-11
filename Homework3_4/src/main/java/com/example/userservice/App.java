@@ -1,12 +1,13 @@
 package com.example.userservice;
 
 import com.example.userservice.config.HibernateUtil;
-import com.example.userservice.dao.UserDao;
 import com.example.userservice.dao.UserDaoImpl;
 import com.example.userservice.dto.UserDto;
 import com.example.userservice.exception.DaoException;
 import com.example.userservice.exception.ValidationException;
 import com.example.userservice.mapper.UserMapper;
+import com.example.userservice.service.UserService;
+import com.example.userservice.service.UserServiceImpl;
 import com.example.userservice.ui.ConsoleUi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,8 @@ public class App {
         ConsoleUi ui = null;
         try (scanner) {
             ui = new ConsoleUi(scanner);
-            UserDao userDao = new UserDaoImpl();
-            runLoop(ui, userDao);
+            UserService userService = new UserServiceImpl(new UserDaoImpl());
+            runLoop(ui, userService);
         } catch (Exception e) {
             LOGGER.error("Unexpected error", e);
             if (ui != null) {
@@ -47,7 +48,7 @@ public class App {
         }
     }
 
-    private static void runLoop(ConsoleUi ui, UserDao userDao) {
+    private static void runLoop(ConsoleUi ui, UserService userService) {
         boolean running = true;
         while (running) {
             ui.printMenu();
@@ -57,18 +58,18 @@ public class App {
                 continue;
             }
             switch (choice.get()) {
-                case 1 -> createUser(ui, userDao);
-                case 2 -> findUserById(ui, userDao);
-                case 3 -> showAllUsers(ui, userDao);
-                case 4 -> updateUser(ui, userDao);
-                case 5 -> deleteUser(ui, userDao);
+                case 1 -> createUser(ui, userService);
+                case 2 -> findUserById(ui, userService);
+                case 3 -> showAllUsers(ui, userService);
+                case 4 -> updateUser(ui, userService);
+                case 5 -> deleteUser(ui, userService);
                 case 0 -> running = false;
                 default -> ui.printError("Неверный пункт. Введите 0-5.");
             }
         }
     }
 
-    private static void createUser(ConsoleUi ui, UserDao userDao) {
+    private static void createUser(ConsoleUi ui, UserService userService) {
         try {
             String name;
             while (true) {
@@ -106,7 +107,7 @@ public class App {
             }
 
             UserDto dto = new UserDto(null, name.trim(), email.trim(), age, null);
-            UserDto created = userDao.create(dto);
+            UserDto created = userService.create(dto);
             ui.printMessage("Пользователь создан:");
             ui.printUser(created);
         } catch (ValidationException e) {
@@ -116,13 +117,13 @@ public class App {
         }
     }
 
-    private static void findUserById(ConsoleUi ui, UserDao userDao) {
+    private static void findUserById(ConsoleUi ui, UserService userService) {
         Optional<Long> idOpt = ui.readLong("ID: ");
         if (idOpt.isEmpty()) {
             return;
         }
         try {
-            Optional<UserDto> result = userDao.findById(idOpt.get());
+            Optional<UserDto> result = userService.findById(idOpt.get());
             if (result.isPresent()) {
                 ui.printUser(result.get());
             } else {
@@ -133,22 +134,22 @@ public class App {
         }
     }
 
-    private static void showAllUsers(ConsoleUi ui, UserDao userDao) {
+    private static void showAllUsers(ConsoleUi ui, UserService userService) {
         try {
-            List<UserDto> users = userDao.findAll();
+            List<UserDto> users = userService.findAll();
             ui.printUsers(users);
         } catch (DaoException e) {
             printDbError(ui, e);
         }
     }
 
-    private static void updateUser(ConsoleUi ui, UserDao userDao) {
+    private static void updateUser(ConsoleUi ui, UserService userService) {
         Optional<Long> idOpt = ui.readLong("ID: ");
         if (idOpt.isEmpty()) {
             return;
         }
         try {
-            Optional<UserDto> existing = userDao.findById(idOpt.get());
+            Optional<UserDto> existing = userService.findById(idOpt.get());
             if (existing.isEmpty()) {
                 ui.printMessage(USER_NOT_FOUND);
                 return;
@@ -161,7 +162,7 @@ public class App {
             int age = readUpdatedAge(ui, existing.get().age());
 
             UserDto dto = new UserDto(null, name, email, age, existing.get().createdAt());
-            Optional<UserDto> updated = userDao.update(idOpt.get(), dto);
+            Optional<UserDto> updated = userService.update(idOpt.get(), dto);
             if (updated.isPresent()) {
                 ui.printMessage("Пользователь обновлён:");
                 ui.printUser(updated.get());
@@ -229,13 +230,13 @@ public class App {
         }
     }
 
-    private static void deleteUser(ConsoleUi ui, UserDao userDao) {
+    private static void deleteUser(ConsoleUi ui, UserService userService) {
         Optional<Long> idOpt = ui.readLong("ID: ");
         if (idOpt.isEmpty()) {
             return;
         }
         try {
-            boolean deleted = userDao.delete(idOpt.get());
+            boolean deleted = userService.delete(idOpt.get());
             if (deleted) {
                 ui.printMessage("Пользователь удалён.");
             } else {
