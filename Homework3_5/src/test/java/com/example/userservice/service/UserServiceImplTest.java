@@ -1,30 +1,27 @@
 package com.example.userservice.service;
 
-import com.example.userservice.dao.UserDao;
 import com.example.userservice.dto.UserDto;
-import com.example.userservice.exception.DaoException;
 import com.example.userservice.exception.ValidationException;
+import com.example.userservice.model.User;
+import com.example.userservice.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,20 +33,20 @@ class UserServiceImplTest {
     private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
 
     @Mock
-    private UserDao userDao;
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
 
     @Test
     void createNormalizesNameAndEmailAndPersistsUser() {
-        when(userDao.findByEmail("ivan@example.com")).thenReturn(Optional.empty());
-        when(userDao.create(any(UserDto.class)))
-                .thenAnswer(invocation -> {
-                    UserDto argument = invocation.getArgument(0);
-                    return new UserDto(42L, argument.name(), argument.email(),
-                            argument.age(), CREATED_AT);
-                });
+        when(userRepository.existsByEmailIgnoreCase("ivan@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User entity = invocation.getArgument(0);
+            entity.setId(42L);
+            entity.setCreatedAt(CREATED_AT);
+            return entity;
+        });
 
         UserDto created = userService.create(
                 new UserDto(null, "  Ivan  ", " Ivan@Example.COM ", 30, null));
@@ -57,18 +54,20 @@ class UserServiceImplTest {
         assertEquals(42L, created.id());
         assertEquals("Ivan", created.name());
         assertEquals("ivan@example.com", created.email());
+        assertEquals(30, created.age());
+        assertEquals(CREATED_AT, created.createdAt());
 
-        ArgumentCaptor<UserDto> captor = ArgumentCaptor.forClass(UserDto.class);
-        verify(userDao).create(captor.capture());
-        assertNull(captor.getValue().id());
-        assertEquals("ivan@example.com", captor.getValue().email());
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertEquals("Ivan", captor.getValue().getName());
+        assertEquals("ivan@example.com", captor.getValue().getEmail());
     }
 
     @Test
     void createRejectsNullDto() {
         assertThrows(IllegalArgumentException.class, () -> userService.create(null));
 
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
@@ -77,35 +76,45 @@ class UserServiceImplTest {
 
         assertThrows(ValidationException.class, () -> userService.create(invalid));
 
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
     void createRejectsDuplicateEmail() {
         UserDto duplicate = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
-        when(userDao.findByEmail("ivan@example.com"))
-                .thenReturn(Optional.of(new UserDto(7L, "Ivan", "ivan@example.com", 30, CREATED_AT)));
+        when(userRepository.existsByEmailIgnoreCase("ivan@example.com")).thenReturn(true);
 
         assertThrows(ValidationException.class, () -> userService.create(duplicate));
 
-        verify(userDao, never()).create(any(UserDto.class));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
-    void findByIdDelegatesToDao() {
-        UserDto stored = new UserDto(1L, "Ivan", "ivan@example.com", 30, CREATED_AT);
-        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
+    void createConvertsUniqueConstraintViolationToValidationException() {
+        when(userRepository.existsByEmailIgnoreCase("ivan@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate"));
+
+        UserDto dto = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
+
+        assertThrows(ValidationException.class, () -> userService.create(dto));
+    }
+
+    @Test
+    void findByIdDelegatesToRepository() {
+        User stored = user(1L, "Ivan", "ivan@example.com", 30);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(stored));
 
         Optional<UserDto> result = userService.findById(1L);
 
         assertTrue(result.isPresent());
-        assertSame(stored, result.get());
-        verify(userDao).findById(1L);
+        assertEquals(1L, result.get().id());
+        assertEquals("Ivan", result.get().name());
     }
 
     @Test
     void findByIdReturnsEmptyWhenUserIsMissing() {
-        when(userDao.findById(2L)).thenReturn(Optional.empty());
+        when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
         assertTrue(userService.findById(2L).isEmpty());
     }
@@ -114,79 +123,63 @@ class UserServiceImplTest {
     void findByIdRejectsNullId() {
         assertThrows(IllegalArgumentException.class, () -> userService.findById(null));
 
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void findAllReturnsUnmodifiableSnapshot() {
-        List<UserDto> mutable = new ArrayList<>();
-        mutable.add(new UserDto(1L, "Ivan", "ivan@example.com", 30, CREATED_AT));
-        when(userDao.findAll()).thenReturn(mutable);
+    void findAllReturnsMappedUsers() {
+        when(userRepository.findAllByOrderByIdAsc()).thenReturn(List.of(
+                user(1L, "Ivan", "ivan@example.com", 30),
+                user(2L, "Anna", "anna@example.com", 25)));
 
         List<UserDto> result = userService.findAll();
 
-        assertEquals(1, result.size());
-        mutable.add(new UserDto(2L, "Anna", "anna@example.com", 25, CREATED_AT));
-        assertEquals(1, result.size());
-        assertThrows(UnsupportedOperationException.class, () -> result.add(null));
+        assertEquals(2, result.size());
+        assertEquals(List.of("Ivan", "Anna"), result.stream().map(UserDto::name).toList());
     }
 
     @Test
-    void updateNormalizesInputAndKeepsCreatedAt() {
-        UserDto existing = new UserDto(5L, "Ivan", "ivan@example.com", 30, CREATED_AT);
-        UserDto updated = new UserDto(5L, "Ivan Petrov", "ivan.petrov@example.com", 31, CREATED_AT);
-        when(userDao.findById(5L)).thenReturn(Optional.of(existing));
-        when(userDao.findByEmail("ivan.petrov@example.com")).thenReturn(Optional.empty());
-        when(userDao.update(eq(5L), any(UserDto.class))).thenReturn(Optional.of(updated));
+    void updateChangesFieldsAndKeepsCreatedAt() {
+        User existing = user(5L, "Ivan", "ivan@example.com", 30);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByEmailIgnoreCaseAndIdNot("ivan.petrov@example.com", 5L))
+                .thenReturn(false);
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         Optional<UserDto> result = userService.update(5L,
                 new UserDto(null, " Ivan Petrov ", " Ivan.Petrov@Example.com ", 31, null));
 
         assertTrue(result.isPresent());
         assertEquals("Ivan Petrov", result.get().name());
-
-        ArgumentCaptor<UserDto> captor = ArgumentCaptor.forClass(UserDto.class);
-        verify(userDao).update(eq(5L), captor.capture());
-        assertEquals("ivan.petrov@example.com", captor.getValue().email());
-        assertEquals(CREATED_AT, captor.getValue().createdAt());
+        assertEquals("ivan.petrov@example.com", result.get().email());
+        assertEquals(31, result.get().age());
+        assertEquals(CREATED_AT, result.get().createdAt());
     }
 
     @Test
     void updateReturnsEmptyWhenUserIsMissing() {
-        when(userDao.findById(9L)).thenReturn(Optional.empty());
+        when(userRepository.findById(9L)).thenReturn(Optional.empty());
 
         Optional<UserDto> result = userService.update(9L,
                 new UserDto(null, "Ivan", "ivan@example.com", 30, null));
 
         assertTrue(result.isEmpty());
-        verify(userDao, never()).update(anyLong(), any(UserDto.class));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void updateRejectsEmailOwnedByAnotherUser() {
-        UserDto existing = new UserDto(3L, "Ivan", "ivan@example.com", 30, CREATED_AT);
-        UserDto other = new UserDto(4L, "Anna", "anna@example.com", 25, CREATED_AT);
-        when(userDao.findById(3L)).thenReturn(Optional.of(existing));
-        when(userDao.findByEmail("anna@example.com")).thenReturn(Optional.of(other));
+        User existing = user(3L, "Ivan", "ivan@example.com", 30);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByEmailIgnoreCaseAndIdNot("anna@example.com", 3L))
+                .thenReturn(true);
 
         UserDto rename = new UserDto(null, "Ivan", "anna@example.com", 30, null);
 
         assertThrows(ValidationException.class, () -> userService.update(3L, rename));
 
-        verify(userDao, never()).update(anyLong(), any(UserDto.class));
-    }
-
-    @Test
-    void updateAllowsKeepingOwnEmail() {
-        UserDto existing = new UserDto(3L, "Ivan", "ivan@example.com", 30, CREATED_AT);
-        when(userDao.findById(3L)).thenReturn(Optional.of(existing));
-        when(userDao.findByEmail("ivan@example.com")).thenReturn(Optional.of(existing));
-        when(userDao.update(eq(3L), any(UserDto.class))).thenReturn(Optional.of(existing));
-
-        Optional<UserDto> result = userService.update(3L,
-                new UserDto(null, "Ivan", "ivan@example.com", 31, null));
-
-        assertTrue(result.isPresent());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -196,33 +189,41 @@ class UserServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> userService.update(null, rename));
         assertThrows(IllegalArgumentException.class, () -> userService.update(1L, null));
 
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void deleteDelegatesToDaoAndReportsResult() {
-        when(userDao.delete(6L)).thenReturn(true);
-        when(userDao.delete(7L)).thenReturn(false);
+    void deleteRemovesExistingUser() {
+        when(userRepository.existsById(6L)).thenReturn(true);
 
         assertTrue(userService.delete(6L));
+
+        verify(userRepository).deleteById(6L);
+    }
+
+    @Test
+    void deleteReturnsFalseForMissingUser() {
+        when(userRepository.existsById(7L)).thenReturn(false);
+
         assertFalse(userService.delete(7L));
+
+        verify(userRepository, never()).deleteById(anyLong());
     }
 
     @Test
     void deleteRejectsNullId() {
         assertThrows(IllegalArgumentException.class, () -> userService.delete(null));
 
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userRepository);
     }
 
-    @Test
-    void daoFailuresArePropagated() {
-        when(userDao.findByEmail("ivan@example.com")).thenReturn(Optional.empty());
-        when(userDao.create(any(UserDto.class)))
-                .thenThrow(new DaoException("Не удалось создать пользователя", new RuntimeException()));
-
-        UserDto dto = new UserDto(null, "Ivan", "ivan@example.com", 30, null);
-
-        assertThrows(DaoException.class, () -> userService.create(dto));
+    private static User user(Long id, String name, String email, Integer age) {
+        User user = new User();
+        user.setId(id);
+        user.setName(name);
+        user.setEmail(email);
+        user.setAge(age);
+        user.setCreatedAt(CREATED_AT);
+        return user;
     }
 }
