@@ -1,5 +1,6 @@
 package com.example.notificationservice.service;
 
+import com.example.notificationservice.TestMailConfig;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
 import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.util.ServerSetupTest;
@@ -11,14 +12,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class EmailServiceIntegrationTest {
 
-    private static final String MAIL_USER = "mihnikolaenko12@yandex.ru";
-    private static final String MAIL_PASSWORD = "greenmail";
+    private static final String MAIL_USER = TestMailConfig.MAIL_USER;
+    private static final String MAIL_PASSWORD = UUID.randomUUID().toString();
     private static final String SMTP_HOST = ServerSetupTest.SMTP.getBindAddress();
     private static final int SMTP_PORT = ServerSetupTest.SMTP.getPort();
 

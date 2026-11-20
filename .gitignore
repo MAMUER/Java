@@ -7,3 +7,5 @@ Java Aston/
 .env
 .env.*
 !.env.example
+logs/
+notification-service/logs/

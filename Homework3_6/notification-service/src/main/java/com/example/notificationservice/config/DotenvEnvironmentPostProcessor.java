@@ -59,6 +59,9 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor,
                 }
                 String key = entry.substring(0, separator).trim();
                 String value = stripQuotes(entry.substring(separator + 1).trim());
+                if ("MAIL_PASSWORD".equals(key)) {
+                    value = value.replaceAll("\\s", "");
+                }
                 values.put(key, value);
             }
         } catch (IOException e) {
