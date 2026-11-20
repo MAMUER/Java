@@ -9,3 +9,8 @@ Java Aston/
 !.env.example
 logs/
 notification-service/logs/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
