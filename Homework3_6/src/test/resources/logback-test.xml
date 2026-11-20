@@ -8,6 +8,7 @@
     <logger name="org.testcontainers" level="INFO"/>
     <logger name="com.github.dockerjava" level="WARN"/>
     <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="com.example.userservice.event.KafkaUserEventPublisher" level="OFF"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

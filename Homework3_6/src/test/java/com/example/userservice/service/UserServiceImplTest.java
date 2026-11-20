@@ -1,6 +1,8 @@
 package com.example.userservice.service;
 
 import com.example.userservice.dto.UserDto;
+import com.example.userservice.event.UserEventPublisher;
+import com.example.events.UserOperation;
 import com.example.userservice.exception.ValidationException;
 import com.example.userservice.model.User;
 import com.example.userservice.repository.UserRepository;
@@ -34,6 +36,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserEventPublisher userEventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -194,20 +199,23 @@ class UserServiceImplTest {
 
     @Test
     void deleteRemovesExistingUser() {
-        when(userRepository.existsById(6L)).thenReturn(true);
+        when(userRepository.findById(6L)).thenReturn(Optional.of(
+                user(6L, "Ivan", "ivan@example.com", 30)));
 
         assertTrue(userService.delete(6L));
 
         verify(userRepository).deleteById(6L);
+        verify(userEventPublisher).publish(UserOperation.DELETED, "ivan@example.com");
     }
 
     @Test
     void deleteReturnsFalseForMissingUser() {
-        when(userRepository.existsById(7L)).thenReturn(false);
+        when(userRepository.findById(7L)).thenReturn(Optional.empty());
 
         assertFalse(userService.delete(7L));
 
         verify(userRepository, never()).deleteById(anyLong());
+        verifyNoInteractions(userEventPublisher);
     }
 
     @Test
@@ -215,6 +223,36 @@ class UserServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> userService.delete(null));
 
         verifyNoInteractions(userRepository);
+        verifyNoInteractions(userEventPublisher);
+    }
+
+    @Test
+    void createPublishesCreatedEvent() {
+        when(userRepository.existsByEmailIgnoreCase("ivan@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User entity = invocation.getArgument(0);
+            entity.setId(11L);
+            entity.setCreatedAt(CREATED_AT);
+            return entity;
+        });
+
+        userService.create(new UserDto(null, "Ivan", "ivan@example.com", 30, null));
+
+        ArgumentCaptor<UserOperation> operation = ArgumentCaptor.forClass(UserOperation.class);
+        ArgumentCaptor<String> email = ArgumentCaptor.forClass(String.class);
+        verify(userEventPublisher).publish(operation.capture(), email.capture());
+        assertEquals(UserOperation.CREATED, operation.getValue());
+        assertEquals("ivan@example.com", email.getValue());
+    }
+
+    @Test
+    void createDoesNotPublishEventWhenValidationFails() {
+        UserDto invalid = new UserDto(null, " ", "ivan@example.com", 30, null);
+
+        assertThrows(ValidationException.class, () -> userService.create(invalid));
+
+        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userEventPublisher);
     }
 
     private static User user(Long id, String name, String email, Integer age) {

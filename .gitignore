@@ -4,3 +4,6 @@
 Java Aston/
 .kilo/
 **/.kilo/
+.env
+.env.*
+!.env.example

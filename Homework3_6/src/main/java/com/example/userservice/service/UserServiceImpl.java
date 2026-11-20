@@ -1,6 +1,8 @@
 package com.example.userservice.service;
 
+import com.example.events.UserOperation;
 import com.example.userservice.dto.UserDto;
+import com.example.userservice.event.UserEventPublisher;
 import com.example.userservice.exception.ValidationException;
 import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.User;
@@ -18,12 +20,17 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserEventPublisher userEventPublisher;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, UserEventPublisher userEventPublisher) {
         if (userRepository == null) {
             throw new IllegalArgumentException("userRepository не должен быть null");
         }
+        if (userEventPublisher == null) {
+            throw new IllegalArgumentException("userEventPublisher не должен быть null");
+        }
         this.userRepository = userRepository;
+        this.userEventPublisher = userEventPublisher;
     }
 
     @Override
@@ -39,12 +46,15 @@ public class UserServiceImpl implements UserService {
         }
         User entity = UserMapper.toEntity(
                 new UserDto(null, dto.name().trim(), email, dto.age(), null));
+        UserDto created;
         try {
-            return UserMapper.toDto(userRepository.save(entity));
+            created = UserMapper.toDto(userRepository.save(entity));
         } catch (DataIntegrityViolationException e) {
             throw new ValidationException(List.of(
                     "пользователь с email " + email + " уже существует"));
         }
+        userEventPublisher.publish(UserOperation.CREATED, created.email());
+        return created;
     }
 
     @Override
@@ -99,10 +109,12 @@ public class UserServiceImpl implements UserService {
         if (id == null) {
             throw new IllegalArgumentException("id не должен быть null");
         }
-        if (!userRepository.existsById(id)) {
+        Optional<User> existing = userRepository.findById(id);
+        if (existing.isEmpty()) {
             return false;
         }
         userRepository.deleteById(id);
+        userEventPublisher.publish(UserOperation.DELETED, existing.get().getEmail());
         return true;
     }
 
