@@ -1,7 +1,6 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.dto.UserDto;
-import com.example.userservice.exception.ValidationException;
 import com.example.userservice.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,9 +142,6 @@ class UserControllerTest {
 
     @Test
     void createReturnsBadRequestWithValidationDetails() throws Exception {
-        when(userService.create(any(UserDto.class)))
-                .thenThrow(new ValidationException(List.of("email не соответствует формату")));
-
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

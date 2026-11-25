@@ -1,43 +1,55 @@
 package com.example.userservice.mapper;
 
 import com.example.userservice.dto.UserDto;
-import com.example.userservice.exception.ValidationException;
+import com.example.userservice.model.User;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserMapperTest {
 
+    private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+
     @Test
-    void validDtoPasses() {
-        UserDto dto = new UserDto(null, "Иван", "ivan@example.com", 30, LocalDateTime.now());
-        UserMapper.validate(dto);
+    void toEntityMapsFieldsAndTrimsValues() {
+        User entity = UserMapper.toEntity(
+                new UserDto(5L, "  Ivan  ", " ivan@example.com ", 30, CREATED_AT));
+
+        assertEquals(5L, entity.getId());
+        assertEquals("Ivan", entity.getName());
+        assertEquals("ivan@example.com", entity.getEmail());
+        assertEquals(30, entity.getAge());
+        assertEquals(CREATED_AT, entity.getCreatedAt());
     }
 
     @Test
-    void invalidAgeThrows() {
-        UserDto dto = new UserDto(null, "Иван", "ivan@example.com", 200, null);
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> UserMapper.validate(dto));
-        assertTrue(ex.getViolations().stream().anyMatch(v -> v.contains("возраст")));
+    void toDtoMapsFields() {
+        User entity = new User();
+        entity.setId(7L);
+        entity.setName("Anna");
+        entity.setEmail("anna@example.com");
+        entity.setAge(25);
+        entity.setCreatedAt(CREATED_AT);
+
+        UserDto dto = UserMapper.toDto(entity);
+
+        assertEquals(7L, dto.id());
+        assertEquals("Anna", dto.name());
+        assertEquals("anna@example.com", dto.email());
+        assertEquals(25, dto.age());
+        assertEquals(CREATED_AT, dto.createdAt());
     }
 
     @Test
-    void invalidNameThrows() {
-        UserDto dto = new UserDto(null, "A", "ivan@example.com", 30, null);
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> UserMapper.validate(dto));
-        assertTrue(ex.getViolations().stream().anyMatch(v -> v.contains("имен")));
+    void toEntityRejectsNull() {
+        assertThrows(IllegalArgumentException.class, () -> UserMapper.toEntity(null));
     }
 
     @Test
-    void invalidEmailThrows() {
-        UserDto dto = new UserDto(null, "Иван", "not-an-email", 30, null);
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> UserMapper.validate(dto));
-        assertTrue(ex.getViolations().stream().anyMatch(v -> v.contains("email")));
+    void toDtoRejectsNull() {
+        assertThrows(IllegalArgumentException.class, () -> UserMapper.toDto(null));
     }
 }

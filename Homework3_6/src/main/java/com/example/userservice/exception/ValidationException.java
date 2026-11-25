@@ -11,6 +11,11 @@ public class ValidationException extends RuntimeException {
         this.violations = List.copyOf(violations);
     }
 
+    public ValidationException(List<String> violations, Throwable cause) {
+        super(String.join("; ", violations), cause);
+        this.violations = List.copyOf(violations);
+    }
+
     public List<String> getViolations() {
         return violations;
     }

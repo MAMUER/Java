@@ -4,6 +4,7 @@ import com.example.userservice.dto.UserDto;
 import com.example.userservice.dto.UserRequest;
 import com.example.userservice.exception.UserNotFoundException;
 import com.example.userservice.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,14 +42,14 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody UserRequest request) {
+    public ResponseEntity<UserDto> create(@Valid @RequestBody UserRequest request) {
         UserDto created = userService.create(toDto(request));
         return ResponseEntity.created(URI.create("/api/users/" + created.id()))
                 .body(created);
     }
 
     @PutMapping("/{id}")
-    public UserDto update(@PathVariable Long id, @RequestBody UserRequest request) {
+    public UserDto update(@PathVariable Long id, @Valid @RequestBody UserRequest request) {
         return userService.update(id, toDto(request))
                 .orElseThrow(() -> new UserNotFoundException(id));
     }

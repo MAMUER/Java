@@ -7,6 +7,9 @@ import com.example.userservice.exception.ValidationException;
 import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.User;
 import com.example.userservice.repository.UserRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,10 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
+
+    private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
+    private static final String EMAIL_TAKEN = "пользователь с email %s уже существует";
 
     private final UserRepository userRepository;
     private final UserEventPublisher userEventPublisher;
@@ -38,20 +45,19 @@ public class UserServiceImpl implements UserService {
         if (dto == null) {
             throw new IllegalArgumentException("dto не должен быть null");
         }
-        UserMapper.validate(dto);
-        String email = normalizeEmail(dto.email());
+        UserDto normalized = normalize(dto);
+        validate(normalized);
+        String email = normalized.email();
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new ValidationException(List.of(
-                    "пользователь с email " + email + " уже существует"));
+            throw new ValidationException(List.of(EMAIL_TAKEN.formatted(email)));
         }
         User entity = UserMapper.toEntity(
-                new UserDto(null, dto.name().trim(), email, dto.age(), null));
+                new UserDto(null, normalized.name(), email, normalized.age(), null));
         UserDto created;
         try {
             created = UserMapper.toDto(userRepository.save(entity));
         } catch (DataIntegrityViolationException e) {
-            throw new ValidationException(List.of(
-                    "пользователь с email " + email + " уже существует"));
+            throw new ValidationException(List.of(EMAIL_TAKEN.formatted(email)), e);
         }
         userEventPublisher.publish(UserOperation.CREATED, created.email());
         return created;
@@ -82,25 +88,24 @@ public class UserServiceImpl implements UserService {
         if (dto == null) {
             throw new IllegalArgumentException("dto не должен быть null");
         }
-        UserMapper.validate(dto);
+        UserDto normalized = normalize(dto);
+        validate(normalized);
         Optional<User> existing = userRepository.findById(id);
         if (existing.isEmpty()) {
             return Optional.empty();
         }
-        String email = normalizeEmail(dto.email());
+        String email = normalized.email();
         if (userRepository.existsByEmailIgnoreCaseAndIdNot(email, id)) {
-            throw new ValidationException(List.of(
-                    "пользователь с email " + email + " уже существует"));
+            throw new ValidationException(List.of(EMAIL_TAKEN.formatted(email)));
         }
         User entity = existing.get();
-        entity.setName(dto.name().trim());
+        entity.setName(normalized.name());
         entity.setEmail(email);
-        entity.setAge(dto.age());
+        entity.setAge(normalized.age());
         try {
             return Optional.of(UserMapper.toDto(userRepository.save(entity)));
         } catch (DataIntegrityViolationException e) {
-            throw new ValidationException(List.of(
-                    "пользователь с email " + email + " уже существует"));
+            throw new ValidationException(List.of(EMAIL_TAKEN.formatted(email)), e);
         }
     }
 
@@ -118,7 +123,23 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
+    private void validate(UserDto dto) {
+        Set<ConstraintViolation<UserDto>> violations = VALIDATOR.validate(dto);
+        if (violations.isEmpty()) {
+            return;
+        }
+        List<String> messages = violations.stream()
+                .map(ConstraintViolation::getMessage)
+                .distinct()
+                .toList();
+        throw new ValidationException(messages);
+    }
+
+    private UserDto normalize(UserDto dto) {
+        String name = dto.name() == null ? null : dto.name().trim();
+        String email = dto.email() == null
+                ? null
+                : dto.email().trim().toLowerCase(Locale.ROOT);
+        return new UserDto(dto.id(), name, email, dto.age(), dto.createdAt());
     }
 }
