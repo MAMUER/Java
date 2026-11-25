@@ -1,17 +1,21 @@
 package com.example.userservice.controller;
 
+import com.example.userservice.dto.ApiError;
 import com.example.userservice.dto.UserDto;
 import com.example.userservice.dto.UserRequest;
 import com.example.userservice.exception.UserNotFoundException;
 import com.example.userservice.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +34,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Tag(name = "Users", description = "Операции управления пользователями")
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping(value = "/api/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
 
     private final UserService userService;
@@ -51,7 +55,9 @@ public class UserController {
     @Operation(summary = "Найти пользователя по id")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Пользователь найден"),
-            @ApiResponse(responseCode = "404", description = "Пользователь не найден")
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class)))
     })
     @GetMapping("/{id}")
     public EntityModel<UserDto> findById(
@@ -63,7 +69,9 @@ public class UserController {
     @Operation(summary = "Создать пользователя")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Пользователь создан"),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации")
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping
     public ResponseEntity<EntityModel<UserDto>> create(@Valid @RequestBody UserRequest request) {
@@ -75,8 +83,12 @@ public class UserController {
     @Operation(summary = "Обновить пользователя")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Пользователь обновлён"),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации"),
-            @ApiResponse(responseCode = "404", description = "Пользователь не найден")
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class)))
     })
     @PutMapping("/{id}")
     public EntityModel<UserDto> update(
@@ -89,7 +101,9 @@ public class UserController {
     @Operation(summary = "Удалить пользователя")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Пользователь удалён"),
-            @ApiResponse(responseCode = "404", description = "Пользователь не найден")
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class)))
     })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
